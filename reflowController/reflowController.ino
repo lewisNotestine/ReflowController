@@ -9,6 +9,8 @@ Trying different algorithms, like simple on/off and temperature control reading 
 #include "Adafruit_MAX31855.h"
 #include "PID_v1.h"
 
+//only run the setup, not the loop. 
+bool testOnly = true;
 
 const int gunPin = 11;
 const int thermoDO = 3;
@@ -18,17 +20,17 @@ const int thermoCLK = 5;
 //Times are given as t (not period).
 const double TEMP_THRESHOLD = 2.0;
 
-const double PREHEAT_TIME = 120; //470;
-const double PREHEAT_TEMP = 80;  //125;
+const double PREHEAT_TIME = 120; 
+const double PREHEAT_TEMP = 80;  
 
-const double SOAK_TIME = 40; //575;
-const double SOAK_TEMP = 60;  //160;
+const double SOAK_TIME = 40; 
+const double SOAK_TEMP = 60;  
 
-const double REFLOW_TIME = 60; //675;
-const double REFLOW_TEMP = 80;     //210;
+const double REFLOW_TIME = 60; 
+const double REFLOW_TEMP = 80; 
 
-const double COOLDOWN_TIME = 120;   //800;
-const double COOLDOWN_TEMP = 60;   //160;
+const double COOLDOWN_TIME = 120;
+const double COOLDOWN_TEMP = 60;
 const int SECONDS = 120;
 
 
@@ -60,9 +62,6 @@ double pidSetpoint, pidInput, pidOutput;
 
 //PID controller.
 PID myPID(&pidInput, &pidOutput, &pidSetpoint, 100, 10, 100, DIRECT);
-//PID soakPID(&pidInput, &pidOutput, &pidSetpoint, 20, 1, 20, DIRECT);
-//PID reflowPID(&pidInput, &pidOutput, &pidSetpoint, 20, 1, 20, DIRECT);
-//PID cooldownPID(&pidInput, &pidOutput, &pidSetpoint, 20, 1, 20, DIRECT);
 
 //thermocouple.
 Adafruit_MAX31855 thermocouple(thermoCLK, thermoCS, thermoDO);
@@ -150,7 +149,6 @@ void setup() {
   
   windowStartTime = millis();
   startTime = windowStartTime;
-  //pidSetpoint = 40.0;
   pidSetpoint = dTdtArray[0];
 }
 
@@ -187,26 +185,6 @@ void loopFunc() {
     } else {
       targetTemp = ((currentSecs - timeArray[phaseIndex - 1]) * dTdtArray[phaseIndex]) + tempArray[phaseIndex - 1];
     }
-
-    /*changing these to update every second*/
-    /*dT = c - initTemp;
-    dt = (currentMils - startTime) / 1000.0;
-
-    //dT = c - lastTemp;
-    //dt = (currentMils - lastTime) / 1000.0;
-
-    if (dt != 0) {
-      dTdt = dT / dt;
-      /*if (dTdt == -1) {
-        dTdt = dT / dt;  //initialize the measurement.
-      } else {
-        dTdt = (dTdt + (dT / dt))/ 2.0; //use a moving average to get rid of noise or bias.
-      }
-      
-    } else {
-      dTdt = 0;
-    }*/
-
     
     //Compute.
     myPID.Compute();
@@ -233,17 +211,8 @@ void loopFunc() {
       dT = c - lastTemp;
       dt = (currentMils - lastTime) / 1000.0;
 
-      //dT = c - lastTemp;
-      //dt = (currentMils - lastTime) / 1000.0;
-
       if (dt != 0) {
         dTdt = dT / dt;
-        /*if (dTdt == -1) {
-          dTdt = dT / dt;  //initialize the measurement.
-        } else {
-          dTdt = (dTdt + (dT / dt))/ 2.0; //use a moving average to get rid of noise or bias.
-        }*/
-        
       } else {
         dTdt = 0;
       }
@@ -264,8 +233,7 @@ void loopFunc() {
       Serial.print("; ");
 
       Serial.print("dTdt: ");
-      Serial.print(pidInput);
-      //Serial.print(c - targetTemp);
+      Serial.print(pidInput);      
       Serial.print("; ");
 
       Serial.print("Target Temp = C ");
@@ -277,8 +245,6 @@ void loopFunc() {
       Serial.print(c);
       Serial.print("; ");
 
-      //pidInput = dTdt;
-
       lastTemp = c;
       lastTime = currentMils;
       lastPrinted = currentSecs;
@@ -287,5 +253,7 @@ void loopFunc() {
 }
 
 void loop() {
-  //loopFunc();
+  if (!testOnly) {
+    loopFunc();
+  }
 }
