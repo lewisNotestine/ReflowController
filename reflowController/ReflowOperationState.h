@@ -26,10 +26,10 @@ private:
 	double         tempArray_[4];
 	double*         dTdtArray_;
 	char*          nameArray_[4];
-	char*          	phaseName_;  //name of the phase.
-	double          phaseTime_;  //tracks the time.
+	char*          	phaseName_;  
+	double          phaseTime_;  
 	double          totalTime_;
-	double          targetTemp_;  //current target temperature.
+	double          targetTemp_;  
 	double          initTemp_;
 	double          lastTemp_;
 
