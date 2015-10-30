@@ -1,87 +1,44 @@
 #include "ReflowOperationState.h"
 
 ReflowOperationState::ReflowOperationState() {}
-ReflowOperationState::ReflowOperationState(int phaseIndex,
-    unsigned long   windowStartTime,
-    unsigned long   currentSecs, //TODO. get rid of this.
-    unsigned long   currentMils,
-    unsigned long   startTime,
-    unsigned long   lastTime,
-    double*        	timeArray,
-    double*        	tempArray,
-    //double*        	dTdtArray,
-    char**          nameArray,
-    char*           phaseName,
-    double          phaseTime,
-    double          totalTime,
-    double          targetTemp,  
+ReflowOperationState::ReflowOperationState(PidParams* pidParams,        
+    unsigned long   currentMils,        
     double          initTemp,
-    double          lastTemp,
-    bool            gunIsOn,
-    bool            printed,
-    int             lastPrinted) :
-        phaseIndex_(phaseIndex),
-        windowStartTime_(windowStartTime),
-        currentSecs_(currentSecs),
+    bool            gunIsOn) :
+        pidParams_(pidParams),
+        phaseIndex_(0),
+        windowStartTime_(currentMils),        
         currentMils_(currentMils),
-        startTime_(startTime),
-        lastTime_(lastTime),
-        timeArray_(timeArray),
-        tempArray_(tempArray),
-        //dTdtArray_(dTdtArray),
-        nameArray_(nameArray),
-        phaseName_(phaseName),
-        phaseTime_(phaseTime),
-        totalTime_(totalTime),
-        targetTemp_(targetTemp),
+        startTime_(currentMils),
+        lastTime_(currentMils),
+        timeArray_({ PREHEAT_TIME, SOAK_TIME, REFLOW_TIME, COOLDOWN_TIME }),
+        tempArray_({ PREHEAT_TEMP, SOAK_TEMP, REFLOW_TEMP, COOLDOWN_TEMP }),        
+        phaseTime_(0),
+        totalTime_(0),
+        targetTemp_(PREHEAT_TEMP),
         initTemp_(initTemp),
-        lastTemp_(lastTemp),
+        lastTemp_(initTemp),
         gunIsOn_(gunIsOn),
-        printed_(printed),
-        lastPrinted_(lastPrinted)
-{}
-
-ReflowOperationState* ReflowOperationState::CreateInitialState(unsigned long windowStartTime,
-	unsigned long currentSecs,
-	unsigned long currentMils,
-	unsigned long startTime,
-	//double* timeArray,
-	//double* tempArray,
-	//double* dTdtArray,
-	char** nameArray,
-	char* phaseName,		
-	double targetTemp,		
-	bool printed,
-	int lastPrinted) {
-	
-    return new ReflowOperationState(0,// phaseIndex,
-        windowStartTime,
-        currentSecs,
-        currentMils,
-        startTime,
-        0, //lastTime,
-        { PREHEAT_TIME, SOAK_TIME, REFLOW_TIME, COOLDOWN_TIME }, //timeArray,
-        { PREHEAT_TEMP, SOAK_TEMP, REFLOW_TEMP, COOLDOWN_TEMP }, //tempArray,
-        //dTdtArray, 
-        nameArray,
-        phaseName,
-        0.0, //phaseTime,
-        0.0, //totalTime,
-        targetTemp,
-        0.0, //initTemp,
-        0.0, //lastTemp,
-        false, //gunIsOn,
-        printed,
-        lastPrinted);
+        printed_(false),
+        lastPrinted_(0.0)
+{
+    strcpy(nameArray_[0], "Preheat");  
+    strcpy(nameArray_[1], "Soak");
+    strcpy(nameArray_[2], "Reflow");
+    strcpy(nameArray_[3], "Cooldown");
+    phaseName_ = nameArray_[0];
 }
 
-double ReflowOperationState::getdTdt(int reflowPhaseIndex) {
-    if (dTdtArray_ == 0) {
-        dTdtArray_ = new double[PHASES];
-    }
+void ReflowOperationState::setPidSetpoint(double newSetpoint) {
+    pidParams_->setPidSetpoint(newSetpoint);
+}
 
+double ReflowOperationState::getDTdt(int reflowPhaseIndex) {
     //lazy-assign the value to dTdtArray because we don't expect it to change much.
-    if (dTdtArray_[reflowPhaseIndex] == 0.0) {
+    if (reflowPhaseIndex == 2 && dTdtArray_[2] != 0) //Reflow phase is hard-coded because it's zero.
+    {
+        dTdtArray_[2] = 0;
+    } else if (dTdtArray_[reflowPhaseIndex] == 0.0) {
         if (reflowPhaseIndex == 0) {        
             dTdtArray_[reflowPhaseIndex] = tempArray_[reflowPhaseIndex] - initTemp_ / timeArray_[reflowPhaseIndex];
         } else if (dTdtArray_[reflowPhaseIndex] == 0) {
@@ -90,6 +47,10 @@ double ReflowOperationState::getdTdt(int reflowPhaseIndex) {
     }
 
     return dTdtArray_[reflowPhaseIndex];
+}
+
+double ReflowOperationState::getCurrentDTdt() {
+    return getDTdt(getPhaseIndex());
 }
 
 int ReflowOperationState::getPhaseIndex() {
@@ -120,6 +81,14 @@ double ReflowOperationState::getTimeAt(int timeIndex) {
     return timeArray_[timeIndex];
 }
 
+long ReflowOperationState::getWindowStartTime() {
+    return windowStartTime_;
+}
+
+void ReflowOperationState::setTargetTemp(double newTargetTemp) {
+    targetTemp_ = newTargetTemp;
+}
+
 void ReflowOperationState::incrementPhaseIndex() {
     phaseIndex_++;
 }
@@ -133,9 +102,71 @@ void ReflowOperationState::incrementTotalTime() {
 }
 
 void ReflowOperationState::updateTime() {
-    currentMils = (millis() - startTime);
+    currentMils_ = (millis() - startTime_);
+}               
+
+void ReflowOperationState::evaluatePhaseAndSetpoint() {
+    if (getCurrentSecs() >= getTimeAt(getPhaseIndex())) {
+      incrementPhaseIndex();
+      setPidSetpoint(getDTdt(getPhaseIndex()));
+    }
 }
 
+void ReflowOperationState::evaluateTargetTemp() {
+    if (getPhaseIndex() == 0) {
+      setTargetTemp((getCurrentSecs() * getDTdt(getPhaseIndex())) + initTemp_);
+    } else {
+      setTargetTemp( ((getCurrentSecs() - getTimeAt(getPhaseIndex() - 1)) * getDTdt(getPhaseIndex())) + getTargetTemp(getPhaseIndex() - 1) );      
+    }
+}
+
+double ReflowOperationState::getTargetTemp(int phaseIndex) {
+    return tempArray_[phaseIndex];
+}
+
+
+double ReflowOperationState::getCurrentTargetTemp() {
+    return targetTemp_;
+}
+
+void ReflowOperationState::evaluateWindowStartTime() {
+    if(millis() - windowStartTime_ > ReflowOperationState::WINDOW_SIZE) { //time to shift the Relay Window
+      windowStartTime_ += ReflowOperationState::WINDOW_SIZE;
+    }
+}
+
+void ReflowOperationState::setGunState(bool gunIsOn) {
+    gunIsOn_ = gunIsOn;
+}
+
+bool ReflowOperationState::getPrinted() {
+    return printed_;
+}
+
+void ReflowOperationState::setPrinted(bool newPrinted) {
+    printed_ = newPrinted;
+}
+
+void ReflowOperationState::setLastTemp(double temp) {
+    lastTemp_ = temp;
+}
+
+double ReflowOperationState::getLastTemp() {
+    return lastTemp_;
+}
+
+void ReflowOperationState::evaluatePrinted() {
+    printed_ = (getCurrentSecs() == lastPrinted_);
+}
+
+void ReflowOperationState::evaluatePrintedTime() {
+    lastTime_ = getCurrentMils();
+    lastPrinted_ = getCurrentSecs();
+}
+
+unsigned long ReflowOperationState::getLastTime() {
+    return lastTime_;
+}
 
 
 

@@ -7,25 +7,25 @@ PidParams::PidParams(double* pidSetpoint, double* pidInput, double* pidOutput) {
 }
 
 double PidParams::getPidSetpoint() {
-	return pidSetpoint_;
+	return *pidSetpoint_;
 }
 
 double PidParams::getPidInput() {
-	return pidInput_;
+	return *pidInput_;
 }
 
 double PidParams::getPidOutput() {
-	return pidOutput_;
+	return *pidOutput_;
 }
 
-void setPidSetpoint(double newSetPoint) {
+void PidParams::setPidSetpoint(double newSetPoint) {
 	*pidSetpoint_ = newSetPoint;
 }
 
-void setPidInput(double newPidInput) {
+void PidParams::setPidInput(double newPidInput) {
 	*pidInput_ = newPidInput;
 }
 
-void setPidOutput(double newPidOutput) {
+void PidParams::setPidOutput(double newPidOutput) {
 	*pidOutput_ = newPidOutput;
 }

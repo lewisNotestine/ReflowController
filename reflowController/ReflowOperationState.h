@@ -1,4 +1,6 @@
 #pragma once
+#include "PidParams.h"
+#include "Arduino.h"
 
 /*
 For encapsulating the state of the program. Can be passed between handlers.
@@ -13,16 +15,17 @@ private:
     static const int INDEX_REFLOW = 2;
     static const int INDEX_COOLDOWN = 3;
 
+    PidParams*      pidParams_;
 	int             phaseIndex_;  //current state of the reflow.
 	unsigned long   windowStartTime_;
 	unsigned long   currentSecs_;  //TODO. get rid of this as its own variable. 
 	unsigned long   currentMils_;
 	unsigned long   startTime_; //TASK: find how this is different from windowStartTime.
 	unsigned long   lastTime_; 
-	double*         timeArray_;
-	double*         tempArray_;
+	double         timeArray_[4];
+	double         tempArray_[4];
 	double*         dTdtArray_;
-	char**          nameArray_;
+	char*          nameArray_[4];
 	char*          	phaseName_;  //name of the phase.
 	double          phaseTime_;  //tracks the time.
 	double          totalTime_;
@@ -33,6 +36,11 @@ private:
 	bool            gunIsOn_;
 	bool            printed_;
 	int             lastPrinted_;
+
+    void setPidSetpoint(double newSetpoint);
+
+    void setTargetTemp(double newTargetTemp);
+
 	
 protected:
 	ReflowOperationState();
@@ -60,39 +68,20 @@ public:
     static const int       SECONDS = 120;
     static const int       WINDOW_SIZE = 200;    
 
-    ReflowOperationState(int phaseIndex,
-        unsigned long   windowStartTime,
-        unsigned long   currentSecs,
-        unsigned long   currentMils,
-        unsigned long   startTime,
-        unsigned long   lastTime,
-        double*        	timeArray,
-        double*        	tempArray,        
-        char**          nameArray,
-        char*           phaseName,
-        double          phaseTime,
-        double          totalTime,
-        double          targetTemp,  
-        double          initTemp,
-        double          lastTemp,
-        bool            gunIsOn,
-        bool            printed,
-        int             lastPrinted);
-    
-    static ReflowOperationState* CreateInitialState(
-        unsigned long windowStartTime,
-        unsigned long currentSecs,
-        unsigned long currentMils,
-        unsigned long startTime,    
-        char** nameArray,
-        char* phaseName,		
-        double targetTemp,		
-        bool printed,
-        int lastPrinted);
+    ReflowOperationState(PidParams* pidParams,        
+        unsigned long   currentMils,                
+        double          initTemp,        
+        bool            gunIsOn);
 
     int getPhaseIndex();
 
-    double getdTdt(int reflowPhaseIndex);
+    double getDTdt(int reflowPhaseIndex);
+
+    double getCurrentDTdt();
+
+    double getTargetTemp(int phaseIndex);
+
+    double getCurrentTargetTemp();
 
     double getPhaseTime();
 
@@ -106,6 +95,8 @@ public:
 
     double getTimeAt(int timeIndex);
 
+    long getWindowStartTime();
+
     void incrementPhaseIndex();
 
     void incrementPhaseTime();
@@ -114,4 +105,25 @@ public:
 
     void updateTime();
 
+    void evaluatePhaseAndSetpoint();
+
+    void evaluateTargetTemp();
+
+    void evaluateWindowStartTime();
+
+    void setGunState(bool gunIsOn);
+
+    bool getPrinted();
+
+    void setPrinted(bool newPrinted);
+
+    void setLastTemp(double temp);
+
+    double getLastTemp();
+
+    void evaluatePrinted();
+
+    void evaluatePrintedTime();
+
+    unsigned long getLastTime();
 };

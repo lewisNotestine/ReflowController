@@ -12,7 +12,7 @@ void LoopHandler::handleLoop() {
    double dT;
    double dt; 
    double dTdt = 0;    //rate of temp change current.
-   double c = thermocouple.readCelsius();
+   double c = thermocouple_->readCelsius();
    
   if (isnan(c)) {
     Serial.println("Something wrong with thermocouple!");    
@@ -24,50 +24,41 @@ void LoopHandler::handleLoop() {
     //get current time in milliseconds, interpolate from current phase. 
     reflowState_->updateTime();
 
-    //increment phaseIndex, change setPoint if necessary.
-    if (reflowState->getCurrentSecs() >= reflowState_->getTimeAt(phaseIndex)) {
-      reflowState_->incrementPhaseIndex();
-      pidSetpoint = dTdtArray[phaseIndex];
-    }
-
-    //calculate, set the PID input.
-    if (phaseIndex == 0) {
-      targetTemp = (currentSecs * dTdtArray[phaseIndex]) + initTemp;
-    } else {
-      targetTemp = ((currentSecs - timeArray[phaseIndex - 1]) * dTdtArray[phaseIndex]) + tempArray[phaseIndex - 1];
-    }
+    //increment phaseIndex, change setPoint if necessary.    
+    reflowState_->evaluatePhaseAndSetpoint();
+    
+    //calculate, set the PID input.  
+    reflowState_->evaluateTargetTemp();  
     
     //Compute.
-    myPID.Compute();
+    pid_->Compute();
 
     //turn gun on or off based on PID output.
-    if(millis() - windowStartTime > ReflowOperationState::WINDOW_SIZE) { //time to shift the Relay Window
-      windowStartTime += ReflowOperationState::WINDOW_SIZE;
-    }
+    reflowState_->evaluateWindowStartTime();
     
     /* PID control*/
 
-    if(pidOutput > millis() - windowStartTime) {
+    if(pidParams_->getPidOutput() > millis() - reflowState_->getWindowStartTime()) {
       digitalWrite(
         ReflowOperationState::PIN_GUN,
         HIGH);
-      gunIsOn = true;
+        reflowState_->setGunState(true);
     } else {
       digitalWrite(ReflowOperationState::PIN_GUN,
         LOW);
-      gunIsOn = false;
+        reflowState_->setGunState(false);
     }
 
-    printed = (currentSecs == lastPrinted);
+    reflowState_->evaluatePrinted();
 
     //print everything every second, also reset the dTdt comparanda.
-    if (!printed) {
+    if (!reflowState_->getPrinted()) {
 
       calculateDTDt(&dT, &dt, &c, &dTdt);
 
-      pidInput = dTdt;
+      pidParams_->setPidInput(reflowState_->getCurrentDTdt());
       Serial.print("pid OUTPUT: ");
-      Serial.print(pidOutput);
+      Serial.print(pidParams_->getPidOutput());
       Serial.print("; ");
 
       Serial.print("dT: ");
@@ -77,15 +68,15 @@ void LoopHandler::handleLoop() {
       Serial.println(dt);
 
       Serial.print("Target dTdt: ");
-      Serial.print(dTdtArray[phaseIndex]);
+      Serial.print(reflowState_->getCurrentDTdt());
       Serial.print("; ");
 
       Serial.print("dTdt: ");
-      Serial.print(pidInput);      
+      Serial.print(pidParams_->getPidInput());      
       Serial.print("; ");
 
       Serial.print("Target Temp = C ");
-      Serial.print(targetTemp);
+      Serial.print(reflowState_->getCurrentTargetTemp());
       Serial.print("; ");
 
       //print the observed temperature.
@@ -93,15 +84,15 @@ void LoopHandler::handleLoop() {
       Serial.print(c);
       Serial.print("; ");
 
-      lastTemp = c;
-      lastTime = currentMils;
-      lastPrinted = currentSecs;
+      reflowState_->setLastTemp(c);
+
+      reflowState_->evaluatePrintedTime();
     }
   }
 }
 
 void LoopHandler::calculateDTDt(double* dT, double* dt, double* c, double* dTdtOutput) {
-  *dT = *c - *lastTemp;
+  *dT = *c - reflowState_->getLastTemp();
   *dt = (reflowState_->getCurrentMils() - reflowState_->getLastTime()) / 1000.0;
 
   if (*dt != 0) {
@@ -109,8 +100,4 @@ void LoopHandler::calculateDTDt(double* dT, double* dt, double* c, double* dTdtO
   } else {
     *dTdtOutput = 0;
   }
-}
-
-void LoopHandler::evaluatePhaseIndex() {
-
 }
