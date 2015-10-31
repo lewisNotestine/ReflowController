@@ -1,5 +1,5 @@
-#include <SPI.h>
 #pragma once
+#include <SPI.h>
 #include "Adafruit_MAX31855.h"
 #include "PID_v1.h"
 #include "SetupHandler.h"
