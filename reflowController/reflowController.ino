@@ -28,7 +28,7 @@ Adafruit_MAX31855 thermocouple(
 
 ReflowOperationState* reflowState = 0;
 
-SetupHandler setupHandler(&pid, &pidParams);  
+SetupHandler setupHandler(&pid, &pidParams, &thermocouple);  
 
 LoopHandler loopHandler(&pid, &pidParams, reflowState, &thermocouple);
 
@@ -41,4 +41,5 @@ void loop() {
     loopHandler.handleLoop();
   }
 }
+
 

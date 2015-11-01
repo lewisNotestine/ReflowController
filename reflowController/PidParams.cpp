@@ -29,3 +29,4 @@ void PidParams::setPidInput(double newPidInput) {
 void PidParams::setPidOutput(double newPidOutput) {
 	*pidOutput_ = newPidOutput;
 }
+

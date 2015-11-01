@@ -1,9 +1,10 @@
 #include "SetupHandler.h"
 #include "Arduino.h"
 
-SetupHandler::SetupHandler(PID* pid, PidParams* pidParams) {  
+SetupHandler::SetupHandler(PID* pid, PidParams* pidParams, Adafruit_MAX31855* thermoCouple) {  
   pid_ = pid; 
   pidParams_ = pidParams;
+  thermoCouple_ = thermoCouple;
 }
 
 ReflowOperationState SetupHandler::runSetup() {
@@ -25,7 +26,7 @@ ReflowOperationState SetupHandler::runSetup() {
   
   while (initTemp_ == 0) {
     initTemp_ = thermoCouple_->readCelsius();
-    
+
     if (isnan(initTemp_)) {
        Serial.println("reinitializing...");
        initTemp_ = 0;
@@ -73,4 +74,5 @@ ReflowOperationState SetupHandler::runSetup() {
         initTemp_,
         digitalRead(ReflowOperationState::PIN_GUN));
 }
+
 

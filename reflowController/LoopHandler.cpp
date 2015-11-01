@@ -101,3 +101,4 @@ void LoopHandler::calculateDTDt(double* dT, double* dt, double* c, double* dTdtO
     *dTdtOutput = 0;
   }
 }
+
