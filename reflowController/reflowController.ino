@@ -36,13 +36,9 @@ void setup() {
   *reflowState = setupHandler.runSetup();
 }
 
-void loopFunc() {
-  loopHandler.handleLoop();
-}
-
 void loop() {
   if (!ReflowOperationState::TEST_ONLY) {
-    loopFunc();
+    loopHandler.handleLoop();
   }
 }
 
