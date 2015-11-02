@@ -33,24 +33,23 @@ void ReflowOperationState::setPidSetpoint(double newSetpoint) {
     pidParams_->setPidSetpoint(newSetpoint);
 }
 
-double ReflowOperationState::getDTdt(int reflowPhaseIndex) {
+double ReflowOperationState::getTargetDTdt(int reflowPhaseIndex) {
     //lazy-assign the value to dTdtArray because we don't expect it to change much.
-    if (reflowPhaseIndex == 2 && dTdtArray_[2] != 0) //Reflow phase is hard-coded because it's zero.
-    {
-        dTdtArray_[2] = 0;
-    } else if (dTdtArray_[reflowPhaseIndex] == 0.0) {
-        if (reflowPhaseIndex == 0) {        
-            dTdtArray_[reflowPhaseIndex] = tempArray_[reflowPhaseIndex] - initTemp_ / timeArray_[reflowPhaseIndex];
-        } else if (dTdtArray_[reflowPhaseIndex] == 0) {
-            dTdtArray_[reflowPhaseIndex] = (tempArray_[reflowPhaseIndex] - tempArray_[reflowPhaseIndex - 1]) / (timeArray_[reflowPhaseIndex] - timeArray_[reflowPhaseIndex - 1]);
-        }
-    }
 
-    return dTdtArray_[reflowPhaseIndex];
+    //This may be the case for the reflow phase. dTdt = 0.
+    //Reflow phase is hard-coded because it's zero.
+    if (reflowPhaseIndex > 0 && tempArray_[reflowPhaseIndex] == tempArray_[reflowPhaseIndex - 1])
+    {
+        return 0;
+    } else {
+        return tempArray_[reflowPhaseIndex] / timeArray_[reflowPhaseIndex];
+    }
 }
 
-double ReflowOperationState::getCurrentDTdt() {
-    return getDTdt(getPhaseIndex());
+
+
+double ReflowOperationState::getCurrentTargetDTdt() {
+    return getTargetDTdt(getPhaseIndex());
 }
 
 int ReflowOperationState::getPhaseIndex() {
@@ -108,22 +107,21 @@ void ReflowOperationState::updateTime() {
 void ReflowOperationState::evaluatePhaseAndSetpoint() {
     if (getCurrentSecs() >= getTimeAt(getPhaseIndex())) {
       incrementPhaseIndex();
-      setPidSetpoint(getDTdt(getPhaseIndex()));
+      setPidSetpoint(getCurrentTargetDTdt());
     }
 }
 
 void ReflowOperationState::evaluateTargetTemp() {
     if (getPhaseIndex() == 0) {
-      setTargetTemp((getCurrentSecs() * getDTdt(getPhaseIndex())) + initTemp_);
+      setTargetTemp((getCurrentSecs() * getCurrentTargetDTdt()) + initTemp_);
     } else {
-      setTargetTemp( ((getCurrentSecs() - getTimeAt(getPhaseIndex() - 1)) * getDTdt(getPhaseIndex())) + getTargetTemp(getPhaseIndex() - 1) );      
+      setTargetTemp( ((getCurrentSecs() - getTimeAt(getPhaseIndex() - 1)) * getCurrentTargetDTdt()) + getTargetTemp(getPhaseIndex() - 1) );      
     }
 }
 
 double ReflowOperationState::getTargetTemp(int phaseIndex) {
     return tempArray_[phaseIndex];
 }
-
 
 double ReflowOperationState::getCurrentTargetTemp() {
     return targetTemp_;
@@ -168,6 +166,39 @@ unsigned long ReflowOperationState::getLastTime() {
     return lastTime_;
 }
 
+void ReflowOperationState::printCurrentState() {    
+    Serial.print("phaseIndex: "); Serial.print(getPhaseIndex()); Serial.print('\n');
+    Serial.print("window start time"); Serial.print(getWindowStartTime());Serial.print('\n');    
+    Serial.print("current mils"); Serial.print(getCurrentMils()); Serial.print('\n');
+    Serial.print("current Secs"); Serial.print(getCurrentSecs()); Serial.print('\n');
+    Serial.print("last time"); Serial.print(lastTime_); Serial.print('\n'); 
+    
+    Serial.println("Time Array");
+    for (int i = 0; i < 4; i++) {
+        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(timeArray_[i]); Serial.print('\n');
+    }
+    
+    Serial.println("Temp Array");
+    for (int i = 0; i < 4; i++) {
+        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(tempArray_[i]); Serial.print('\n');
+    }
+    
+    Serial.println("Target dTdt:");
+    for (int i = 0; i < 4; i++) {
+        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(getTargetDTdt(i)); Serial.print('\n');
+    }
+
+    Serial.print("phase time: "); Serial.print(getPhaseTime()); Serial.print('\n');
+    Serial.print("total time: "); Serial.print(getTotalTime()); Serial.print('\n');
+    Serial.print("Target temp: "); Serial.print(getCurrentTargetTemp()); Serial.print('\n');
+    Serial.print("Init Temp: "); Serial.print(initTemp_); Serial.print('\n');
+    Serial.print("Last temp: "); Serial.print(getLastTemp()); Serial.print('\n');
+
+    Serial.print("Gun is on: "); Serial.print(gunIsOn_); Serial.print('\n');
+    Serial.print("Printed: "); Serial.print(printed_); Serial.print('\n');
+    Serial.print("Last printed secs: "); Serial.print(lastPrinted_); Serial.print('\n');
+
+}
 
 
 

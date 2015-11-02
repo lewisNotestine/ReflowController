@@ -4,11 +4,12 @@
 SetupHandler::SetupHandler(PID* pid, PidParams* pidParams, Adafruit_MAX31855* thermoCouple) {  
   pid_ = pid; 
   pidParams_ = pidParams;
-  thermoCouple_ = thermoCouple;
+  thermoCouple_ = thermoCouple;  
 }
 
-ReflowOperationState SetupHandler::runSetup() {
+void SetupHandler::runSetup() {
 	
+  double initTemp = 0.0;
   pinMode(ReflowOperationState::PIN_GUN, OUTPUT);
   
   //tell the PID to range between 0 and the full window size
@@ -16,23 +17,22 @@ ReflowOperationState SetupHandler::runSetup() {
 
   //turn the PID on
   pid_->SetMode(AUTOMATIC);
-  
-  Serial.begin(9600);
-  
-  
+
   Serial.println("MAX31855 test");
   // wait for MAX chip to stabilize
   delay(500);
   
-  while (initTemp_ == 0) {
-    initTemp_ = thermoCouple_->readCelsius();
+  while (initTemp == 0) {
+    initTemp = thermoCouple_->readCelsius();
+    Serial.print("initTemp = ");
+    Serial.print(initTemp);
 
-    if (isnan(initTemp_)) {
+    if (isnan(initTemp)) {
        Serial.println("reinitializing...");
-       initTemp_ = 0;
-    } else if (initTemp_ < 5 || initTemp_ > 50) {
+       initTemp = 0;
+    } else if (initTemp < 5 || initTemp > 50) {
        Serial.println("reinitializing...");
-       initTemp_ = 0;
+       initTemp = 0;
     }
   }
   
@@ -67,12 +67,7 @@ ReflowOperationState SetupHandler::runSetup() {
     LOW);
   Serial.println(digitalRead(ReflowOperationState::PIN_GUN));
   delay(1000);
-  
-  return ReflowOperationState(
-        pidParams_,        
-        millis(),    
-        initTemp_,
-        digitalRead(ReflowOperationState::PIN_GUN));
+
 }
 
 

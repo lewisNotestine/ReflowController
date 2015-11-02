@@ -14,6 +14,10 @@ void LoopHandler::handleLoop() {
    double dTdt = 0;    //rate of temp change current.
    double c = thermocouple_->readCelsius();
    
+   Serial.print("current C: ");
+   Serial.print(c);
+   Serial.print('\n');
+
   if (isnan(c)) {
     Serial.println("Something wrong with thermocouple!");    
     reflowState_->incrementPhaseTime();
@@ -56,7 +60,7 @@ void LoopHandler::handleLoop() {
 
       calculateDTDt(&dT, &dt, &c, &dTdt);
 
-      pidParams_->setPidInput(reflowState_->getCurrentDTdt());
+      pidParams_->setPidInput(dTdt);
       Serial.print("pid OUTPUT: ");
       Serial.print(pidParams_->getPidOutput());
       Serial.print("; ");
@@ -68,7 +72,7 @@ void LoopHandler::handleLoop() {
       Serial.println(dt);
 
       Serial.print("Target dTdt: ");
-      Serial.print(reflowState_->getCurrentDTdt());
+      Serial.print(reflowState_->getCurrentTargetDTdt());
       Serial.print("; ");
 
       Serial.print("dTdt: ");

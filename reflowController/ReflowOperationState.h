@@ -22,11 +22,10 @@ private:
 	unsigned long   currentMils_;
 	unsigned long   startTime_; //TASK: find how this is different from windowStartTime.
 	unsigned long   lastTime_; 
-	double         timeArray_[4];
-	double         tempArray_[4];
-	double*         dTdtArray_;
-	char*          nameArray_[4];
-	char*          	phaseName_;  
+	double          timeArray_[4];
+	double          tempArray_[4];
+	char*           nameArray_[4];
+	char*          	phaseName_;  //TODO: get rid.
 	double          phaseTime_;  
 	double          totalTime_;
 	double          targetTemp_;  
@@ -42,8 +41,8 @@ private:
     void setTargetTemp(double newTargetTemp);
 
 	
-protected:
-	ReflowOperationState();
+
+
 	
 public:
 
@@ -68,6 +67,7 @@ public:
     static const int       SECONDS = 120;
     static const int       WINDOW_SIZE = 200;    
 
+    ReflowOperationState();
     ReflowOperationState(PidParams* pidParams,        
         unsigned long   currentMils,                
         double          initTemp,        
@@ -75,10 +75,10 @@ public:
 
     int getPhaseIndex();
 
-    double getDTdt(int reflowPhaseIndex);
+    double getTargetDTdt(int reflowPhaseIndex);
 
-    double getCurrentDTdt();
-
+    double getCurrentTargetDTdt();
+    
     double getTargetTemp(int phaseIndex);
 
     double getCurrentTargetTemp();
@@ -126,5 +126,7 @@ public:
     void evaluatePrintedTime();
 
     unsigned long getLastTime();
+
+    void printCurrentState();
 };
 
