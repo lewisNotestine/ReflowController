@@ -1,5 +1,5 @@
-#include <SPI.h>
 #pragma once
+#include <SPI.h>
 #include "Adafruit_MAX31855.h"
 #include "PID_v1.h"
 #include "SetupHandler.h"
@@ -26,23 +26,30 @@ Adafruit_MAX31855 thermocouple(
   ReflowOperationState::PIN_THERMO_CS, 
   ReflowOperationState::PIN_THERMO_DO);
 
-ReflowOperationState* reflowState = 0;
+ReflowOperationState reflowState;
 
-SetupHandler setupHandler(&pid, &pidParams);  
+SetupHandler setupHandler(&pid, &pidParams, &thermocouple);  
 
-LoopHandler loopHandler(&pid, &pidParams, reflowState, &thermocouple);
+LoopHandler loopHandler(&pid, &pidParams, &reflowState, &thermocouple);
 
 void setup() { 
-  *reflowState = setupHandler.runSetup();
-}
-
-void loopFunc() {
-  loopHandler.handleLoop();
+  Serial.begin(4800);
+    
+  setupHandler.runSetup();
+  Serial.println("current reflow state");
+  reflowState = ReflowOperationState(
+  	&pidParams,
+  	millis(),
+  	thermocouple.readCelsius(),
+  	digitalRead(ReflowOperationState::PIN_GUN));
+    
+  reflowState.printCurrentState();
 }
 
 void loop() {
   if (!ReflowOperationState::TEST_ONLY) {
-    loopFunc();
+    loopHandler.handleLoop();
   }
 }
+
 

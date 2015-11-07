@@ -9,14 +9,13 @@ class SetupHandler
 	private:		
 		PID* pid_;	
 		PidParams* pidParams_;
-		Adafruit_MAX31855* thermoCouple_;	
-		double initTemp_;
-
+		Adafruit_MAX31855* thermoCouple_;			
 
 	public: 
-		SetupHandler(PID* pid, PidParams* pidParams);
+		SetupHandler(PID* pid, PidParams* pidParams, Adafruit_MAX31855* thermoCouple);
 
-		//Sets up the initial state and returns the state after setup. 
-		ReflowOperationState runSetup();
+		//Sets up and tests the initial state
+		void runSetup();
 };
+
 

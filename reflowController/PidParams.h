@@ -16,3 +16,4 @@ public:
 	void setPidInput(double newPidInput);
 	void setPidOutput(double newPidOutput);
 };
+
