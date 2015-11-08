@@ -31,8 +31,7 @@ public class TextFileLogger implements Logger {
       String input = mSerialInput.readStringUntil('\n');
       if (!isNullOrWhitespace(input))
       {
-        try {          
-          println("writing " + input);
+        try {                  
           mOutputWriter.write(input);
           print(input);
           mDirty = true;
@@ -47,8 +46,7 @@ public class TextFileLogger implements Logger {
     mSaveTimer = new Timer();
     TimerTask timerTask = new TimerTask() {
       @Override
-      public void run () {
-        println("timer firing!");
+      public void run () {        
         saveLogIfDirty();
       }
     };
@@ -64,14 +62,12 @@ public class TextFileLogger implements Logger {
     try
     {
       if (mDirty) {   
-        println("saving!");
         mOutputWriter.flush();
         mDirty = false;
       }
     } catch (IOException ex) {
-      
+      println("EXCEPTION: " + ex.getMessage());      
     }
-    
   }
   
   /**

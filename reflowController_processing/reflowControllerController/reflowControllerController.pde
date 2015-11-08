@@ -17,6 +17,7 @@ void setup() {
   try {
     writer = new FileWriter(file);
   } catch(IOException ex) {
+    println("EXCEPTION: " + ex.getMessage());
     println(String.format("could not open file: %n", file)); 
     exit(); 
   }
