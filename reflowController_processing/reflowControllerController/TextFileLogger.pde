@@ -57,8 +57,7 @@ public class TextFileLogger implements Logger {
     return mSaveTimer == null;
   }
   
-  private void saveLogIfDirty() {
-    println("dirty: " + mDirty);
+  private void saveLogIfDirty() {    
     try
     {
       if (mDirty) {   
