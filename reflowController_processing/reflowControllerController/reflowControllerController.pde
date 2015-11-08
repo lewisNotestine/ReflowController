@@ -11,8 +11,8 @@ Writer writer;
 void setup() {
   config = new DefaultConfiguration();
   inputFromMcu = new Serial( this, Serial.list()[config.getPortNumber()], config.getBaudRate());
-  String path = sketchPath("");
-  String fileName = "testLog.txt";
+  String path = sketchPath(config.getDataOutputDirectory());
+  String fileName = "testLog.log";
   File file = new File(path, fileName);
   try {
     writer = new FileWriter(file);

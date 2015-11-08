@@ -31,8 +31,7 @@ public class TextFileLogger implements Logger {
       String input = mSerialInput.readStringUntil('\n');
       if (!isNullOrWhitespace(input))
       {
-        try {
-          //mTextFileOutput.println(input);
+        try {          
           println("writing " + input);
           mOutputWriter.write(input);
           print(input);
@@ -67,8 +66,6 @@ public class TextFileLogger implements Logger {
       if (mDirty) {   
         println("saving!");
         mOutputWriter.flush();
-        mOutputWriter.close();
-
         mDirty = false;
       }
     } catch (IOException ex) {
