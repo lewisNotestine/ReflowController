@@ -18,12 +18,7 @@ public class TextFileLogger implements Logger {
     mOutputWriter = outputWriter;
   }
   
-  public void Log(String message) {
-
-    throw new UnsupportedOperationException();
-  }
-  
-  public void LogCurrentSerialOutput() {
+  public void logCurrentSerialOutput() {
     if (timerIsUninitialized()) {
       startSaveTimer();
     }

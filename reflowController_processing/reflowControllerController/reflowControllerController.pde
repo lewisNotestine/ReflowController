@@ -25,5 +25,5 @@ void setup() {
 }
 
 void draw() {
-  logger.LogCurrentSerialOutput();
+  logger.logCurrentSerialOutput();
 }
