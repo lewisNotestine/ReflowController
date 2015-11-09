@@ -1,4 +1,6 @@
+# output data files
 *.log
+*.csv
 
 # Compiled Object files
 *.slo

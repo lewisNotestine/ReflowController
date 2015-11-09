@@ -22,6 +22,7 @@ void setup() {
     exit(); 
   }
   logger = new TextFileLogger(inputFromMcu, writer, config.getSaveIntervalMils());  
+  logger.beginLogging();
 }
 
 void draw() {

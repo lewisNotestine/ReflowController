@@ -1,4 +1,7 @@
 import processing.serial.*;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.io.Writer;
@@ -9,6 +12,7 @@ public class TextFileLogger implements Logger {
   private final Writer mOutputWriter;
   private final long mSaveInterval;
   private static final long TIMER_DELAY_MS = 100l;
+  private DateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   private Timer mSaveTimer;
   private boolean mDirty = false;
 
@@ -18,12 +22,27 @@ public class TextFileLogger implements Logger {
     mOutputWriter = outputWriter;
   }
   
+  public void beginLogging() {
+    try {                
+          String startDateTime = LOGGER_DATE_FORMAT.format(new Date());
+          mOutputWriter.write("/*----------Logging Started at " + startDateTime + "---------*/");
+          print();
+          mDirty = true;
+        } catch (IOException ex) {
+          println("EXCEPTION " + ex.getMessage());
+        }
+    if (timerIsUninitialized()) {
+      startSaveTimer();
+    }    
+  }
+  
   public void logCurrentSerialOutput() {
     if (timerIsUninitialized()) {
       startSaveTimer();
     }
     if (mSerialInput.available() > 0) {       
       String input = mSerialInput.readStringUntil('\n');
+      
       if (!isNullOrWhitespace(input))
       {
         try {                  
