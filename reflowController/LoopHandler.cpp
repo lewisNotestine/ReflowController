@@ -13,85 +13,58 @@ void LoopHandler::handleLoop() {
    double dt; 
    double dTdt = 0;    //rate of temp change current.
    double c = thermocouple_->readCelsius();
-   
-   Serial.print("current C: ");
-   Serial.print(c);
-   Serial.print('\n');
+   //unsigned long windowDiff;
+
+  //turn gun on or off based on PID output.
+  reflowState_->evaluateWindowStartTime();
+
+  //increment phaseIndex, change setPoint if necessary.    
+  reflowState_->evaluatePhaseAndSetpoint();
+
+  //calculate, set the PID input.  
+  reflowState_->evaluateTargetTemp();  
+
+  //Compute.
+  pid_->Compute();
 
   if (isnan(c)) {
     Serial.println("Something wrong with thermocouple!");    
-    reflowState_->incrementPhaseTime();
-    reflowState_->incrementTotalTime();     
   } else {
 
-    //set the PID setpoint.
-    //get current time in milliseconds, interpolate from current phase. 
-    reflowState_->updateTime();
-
-    //increment phaseIndex, change setPoint if necessary.    
-    reflowState_->evaluatePhaseAndSetpoint();
-    
-    //calculate, set the PID input.  
-    reflowState_->evaluateTargetTemp();  
-    
-    //Compute.
-    pid_->Compute();
-
-    //turn gun on or off based on PID output.
-    reflowState_->evaluateWindowStartTime();
-    
-    /* PID control*/
-
-    if(pidParams_->getPidOutput() > millis() - reflowState_->getWindowStartTime()) {
-      digitalWrite(
-        ReflowOperationState::PIN_GUN,
-        HIGH);
-        reflowState_->setGunState(true);
+    //TODO: is PIDINTERVAL_MILLIS the right thing to use as a comparison for PID output?
+    if(pidParams_->getPidOutput() > ReflowOperationState::PIDINTERVAL_MILLIS) {
+      digitalWrite(ReflowOperationState::PIN_GUN, HIGH);
+      reflowState_->setGunState(true);
     } else {
-      digitalWrite(ReflowOperationState::PIN_GUN,
-        LOW);
-        reflowState_->setGunState(false);
+      digitalWrite(ReflowOperationState::PIN_GUN, LOW);
+      reflowState_->setGunState(false);
     }
+    
+    calculateDTDt(&dT, &dt, &c, &dTdt);    
+    pidParams_->setPidInput(dTdt);
 
-    reflowState_->evaluatePrinted();
+    Serial.print(pidParams_->getPidOutput());
+    Serial.print(",");
+    Serial.print(dT);
+    Serial.print(",");
+    Serial.print(dt);
+    Serial.print(",");
+    Serial.print(reflowState_->getCurrentTargetDTdt());    
+    Serial.print(",");
+    Serial.print(pidParams_->getPidInput());          
+    Serial.print(",");
+    Serial.print(reflowState_->getCurrentTargetTemp());  
+    Serial.print(","); 
+    Serial.print(c);
+    Serial.print(",");
+    Serial.print(reflowState_->getGunState());
+    
 
-    //print everything every second, also reset the dTdt comparanda.
-    if (!reflowState_->getPrinted()) {
+    Serial.print('\n');
 
-      calculateDTDt(&dT, &dt, &c, &dTdt);
+    reflowState_->setLastTemp(c);
 
-      pidParams_->setPidInput(dTdt);
-      Serial.print("pid OUTPUT: ");
-      Serial.print(pidParams_->getPidOutput());
-      Serial.print("; ");
-
-      Serial.print("dT: ");
-      Serial.print(dT);
-
-      Serial.print("; dt: ");
-      Serial.println(dt);
-
-      Serial.print("Target dTdt: ");
-      Serial.print(reflowState_->getCurrentTargetDTdt());
-      Serial.print("; ");
-
-      Serial.print("dTdt: ");
-      Serial.print(pidParams_->getPidInput());      
-      Serial.print("; ");
-
-      Serial.print("Target Temp = C ");
-      Serial.print(reflowState_->getCurrentTargetTemp());
-      Serial.print("; ");
-
-      //print the observed temperature.
-      Serial.print("Current Temp = C "); 
-      Serial.print(c);
-      Serial.print("; ");
-
-      reflowState_->setLastTemp(c);
-
-      reflowState_->evaluatePrintedTime();
-    }
+    reflowState_->recordJustPrinted();
   }
 }
 

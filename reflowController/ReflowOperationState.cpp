@@ -2,19 +2,17 @@
 
 ReflowOperationState::ReflowOperationState() {}
 ReflowOperationState::ReflowOperationState(PidParams* pidParams,        
-    unsigned long   currentMils,        
+    unsigned long   startingMils,        
     double          initTemp,
     bool            gunIsOn) :
         pidParams_(pidParams),
         phaseIndex_(0),
-        windowStartTime_(currentMils),        
-        currentMils_(currentMils),
-        startTime_(currentMils),
-        lastTime_(currentMils),
+        windowStartTime_(startingMils),        
+        startTime_(startingMils),
+        lastTime_(startingMils),
         timeArray_({ PREHEAT_TIME, SOAK_TIME, REFLOW_TIME, COOLDOWN_TIME }),
         tempArray_({ PREHEAT_TEMP, SOAK_TEMP, REFLOW_TEMP, COOLDOWN_TEMP }),        
         phaseTime_(0),
-        totalTime_(0),
         targetTemp_(PREHEAT_TEMP),
         initTemp_(initTemp),
         lastTemp_(initTemp),
@@ -46,8 +44,6 @@ double ReflowOperationState::getTargetDTdt(int reflowPhaseIndex) {
     }
 }
 
-
-
 double ReflowOperationState::getCurrentTargetDTdt() {
     return getTargetDTdt(getPhaseIndex());
 }
@@ -60,12 +56,8 @@ double ReflowOperationState::getPhaseTime() {
     return phaseTime_;
 }
 
-double ReflowOperationState::getTotalTime() {
-    return totalTime_;
-}
-
 double ReflowOperationState::getCurrentMils() {
-    return currentMils_;
+    return millis() - startTime_;
 }
 
 double ReflowOperationState::getStartTime() {
@@ -73,14 +65,14 @@ double ReflowOperationState::getStartTime() {
 }
 
 double ReflowOperationState::getCurrentSecs() {
-    return currentMils_ / 1000 ;
+    return getCurrentMils() / 1000 ;
 }
 
 double ReflowOperationState::getTimeAt(int timeIndex) {
     return timeArray_[timeIndex];
 }
 
-long ReflowOperationState::getWindowStartTime() {
+unsigned long ReflowOperationState::getWindowStartTime() {
     return windowStartTime_;
 }
 
@@ -95,14 +87,6 @@ void ReflowOperationState::incrementPhaseIndex() {
 void ReflowOperationState::incrementPhaseTime() {
     phaseTime_ += 1.0;
 }
-
-void ReflowOperationState::incrementTotalTime() {
-    totalTime_ += 1.0;
-}
-
-void ReflowOperationState::updateTime() {
-    currentMils_ = (millis() - startTime_);
-}               
 
 void ReflowOperationState::evaluatePhaseAndSetpoint() {
     if (getCurrentSecs() >= getTimeAt(getPhaseIndex())) {
@@ -128,8 +112,8 @@ double ReflowOperationState::getCurrentTargetTemp() {
 }
 
 void ReflowOperationState::evaluateWindowStartTime() {
-    if(millis() - windowStartTime_ > ReflowOperationState::WINDOW_SIZE) { //time to shift the Relay Window
-      windowStartTime_ += ReflowOperationState::WINDOW_SIZE;
+    if(millis() - windowStartTime_ > ReflowOperationState::WINDOW_SIZE) { //time to shift the Relay Window       
+      windowStartTime_ += ReflowOperationState::WINDOW_SIZE;            
     }
 }
 
@@ -137,12 +121,13 @@ void ReflowOperationState::setGunState(bool gunIsOn) {
     gunIsOn_ = gunIsOn;
 }
 
-bool ReflowOperationState::getPrinted() {
-    return printed_;
+bool ReflowOperationState::getGunState() {
+    return gunIsOn_;
 }
 
-void ReflowOperationState::setPrinted(bool newPrinted) {
-    printed_ = newPrinted;
+//If enough time has elapsed or if we've never printed before.
+bool ReflowOperationState::shouldReEvaluatePidSetpointAndPrintOutput() {
+    return getCurrentMils() - lastPrinted_ > PIDINTERVAL_MILLIS || lastPrinted_ == 0.0;
 }
 
 void ReflowOperationState::setLastTemp(double temp) {
@@ -153,53 +138,11 @@ double ReflowOperationState::getLastTemp() {
     return lastTemp_;
 }
 
-void ReflowOperationState::evaluatePrinted() {
-    printed_ = (getCurrentSecs() == lastPrinted_);
-}
-
-void ReflowOperationState::evaluatePrintedTime() {
+void ReflowOperationState::recordJustPrinted() {
     lastTime_ = getCurrentMils();
-    lastPrinted_ = getCurrentSecs();
+    lastPrinted_ = getCurrentMils();
 }
 
 unsigned long ReflowOperationState::getLastTime() {
     return lastTime_;
 }
-
-void ReflowOperationState::printCurrentState() {    
-    Serial.print("phaseIndex: "); Serial.print(getPhaseIndex()); Serial.print('\n');
-    Serial.print("window start time"); Serial.print(getWindowStartTime());Serial.print('\n');    
-    Serial.print("current mils"); Serial.print(getCurrentMils()); Serial.print('\n');
-    Serial.print("current Secs"); Serial.print(getCurrentSecs()); Serial.print('\n');
-    Serial.print("last time"); Serial.print(lastTime_); Serial.print('\n'); 
-    
-    Serial.println("Time Array");
-    for (int i = 0; i < 4; i++) {
-        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(timeArray_[i]); Serial.print('\n');
-    }
-    
-    Serial.println("Temp Array");
-    for (int i = 0; i < 4; i++) {
-        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(tempArray_[i]); Serial.print('\n');
-    }
-    
-    Serial.println("Target dTdt:");
-    for (int i = 0; i < 4; i++) {
-        Serial.print("index: "); Serial.print(i); Serial.print(", value: "); Serial.print(getTargetDTdt(i)); Serial.print('\n');
-    }
-
-    Serial.print("phase time: "); Serial.print(getPhaseTime()); Serial.print('\n');
-    Serial.print("total time: "); Serial.print(getTotalTime()); Serial.print('\n');
-    Serial.print("Target temp: "); Serial.print(getCurrentTargetTemp()); Serial.print('\n');
-    Serial.print("Init Temp: "); Serial.print(initTemp_); Serial.print('\n');
-    Serial.print("Last temp: "); Serial.print(getLastTemp()); Serial.print('\n');
-
-    Serial.print("Gun is on: "); Serial.print(gunIsOn_); Serial.print('\n');
-    Serial.print("Printed: "); Serial.print(printed_); Serial.print('\n');
-    Serial.print("Last printed secs: "); Serial.print(lastPrinted_); Serial.print('\n');
-
-}
-
-
-
-

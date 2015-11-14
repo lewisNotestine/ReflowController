@@ -14,20 +14,18 @@ private:
     static const int INDEX_SOAK = 1;
     static const int INDEX_REFLOW = 2;
     static const int INDEX_COOLDOWN = 3;
+    
 
     PidParams*      pidParams_;
 	int             phaseIndex_;  //current state of the reflow.
 	unsigned long   windowStartTime_;
-	unsigned long   currentSecs_;  //TODO. get rid of this as its own variable. 
-	unsigned long   currentMils_;
 	unsigned long   startTime_; //TASK: find how this is different from windowStartTime.
 	unsigned long   lastTime_; 
 	double          timeArray_[4];
 	double          tempArray_[4];
 	char*           nameArray_[4];
 	char*          	phaseName_;  //TODO: get rid.
-	double          phaseTime_;  
-	double          totalTime_;
+	double          phaseTime_;  	
 	double          targetTemp_;  
 	double          initTemp_;
 	double          lastTemp_;
@@ -48,23 +46,24 @@ public:
 
     //TODO: put the consts into another class? 
     //only run the setup, not the loop. 
-    static const bool TEST_ONLY = true;
+    static const bool TEST_ONLY = false;
     static const int PIN_GUN = 11;
     static const int PIN_THERMO_DO = 3;
     static const int PIN_THERMO_CS = 4;
     static const int PIN_THERMO_CLK = 5;
+    static const int PIDINTERVAL_MILLIS = 100; //how often to reset the pid.
 
-    //Times are given as t (not period).
-    static const double    TEMP_THRESHOLD = 2.0;
+    //Times are given as t (not period).    
     static const double    PREHEAT_TIME = 120; 
-    static const double    PREHEAT_TEMP = 80;  
     static const double    SOAK_TIME = 40; 
-    static const double    SOAK_TEMP = 60;  
     static const double    REFLOW_TIME = 60; 
-    static const double    REFLOW_TEMP = 80; 
     static const double    COOLDOWN_TIME = 120;
-    static const double    COOLDOWN_TEMP = 60;
-    static const int       SECONDS = 120;
+
+    static const double    PREHEAT_TEMP = 80;      
+    static const double    SOAK_TEMP = 60;  
+    static const double    REFLOW_TEMP = 80;     
+    static const double    COOLDOWN_TEMP = 60;    
+
     static const int       WINDOW_SIZE = 200;    
 
     ReflowOperationState();
@@ -95,15 +94,11 @@ public:
 
     double getTimeAt(int timeIndex);
 
-    long getWindowStartTime();
+    unsigned long getWindowStartTime();
 
     void incrementPhaseIndex();
 
     void incrementPhaseTime();
-
-    void incrementTotalTime();
-
-    void updateTime();
 
     void evaluatePhaseAndSetpoint();
 
@@ -113,17 +108,15 @@ public:
 
     void setGunState(bool gunIsOn);
 
-    bool getPrinted();
+    bool getGunState();
 
-    void setPrinted(bool newPrinted);
+    bool shouldReEvaluatePidSetpointAndPrintOutput();
 
     void setLastTemp(double temp);
 
     double getLastTemp();
 
-    void evaluatePrinted();
-
-    void evaluatePrintedTime();
+    void recordJustPrinted();
 
     unsigned long getLastTime();
 

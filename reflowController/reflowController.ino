@@ -18,7 +18,7 @@ double pidSetpoint, pidInput, pidOutput;
 PidParams pidParams(&pidSetpoint, &pidInput, &pidOutput);
 
 //PID controller.
-PID pid(&pidInput, &pidOutput, &pidSetpoint, 100, 10, 100, DIRECT);
+PID pid(&pidInput, &pidOutput, &pidSetpoint, 20, 1, 100, DIRECT);
 
 //thermocouple.
 Adafruit_MAX31855 thermocouple(
@@ -35,15 +35,12 @@ LoopHandler loopHandler(&pid, &pidParams, &reflowState, &thermocouple);
 void setup() { 
   Serial.begin(4800);
     
-  setupHandler.runSetup();
-  Serial.println("current reflow state");
+  setupHandler.runSetup();  
   reflowState = ReflowOperationState(
   	&pidParams,
   	millis(),
   	thermocouple.readCelsius(),
   	digitalRead(ReflowOperationState::PIN_GUN));
-    
-  reflowState.printCurrentState();
 }
 
 void loop() {
