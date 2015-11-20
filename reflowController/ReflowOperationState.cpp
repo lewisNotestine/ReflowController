@@ -18,7 +18,7 @@ ReflowOperationState::ReflowOperationState(PidParams* pidParams,
         lastTemp_(initTemp),
         gunIsOn_(gunIsOn),
         printed_(false),
-        lastPrinted_(0.0)
+        lastPrinted_(0.0)        
 {
     strcpy(nameArray_[0], "Preheat");  
     strcpy(nameArray_[1], "Soak");
@@ -127,7 +127,15 @@ bool ReflowOperationState::getGunState() {
 
 //If enough time has elapsed or if we've never printed before.
 bool ReflowOperationState::shouldReEvaluatePidSetpointAndPrintOutput() {
-    return getCurrentMils() - lastPrinted_ > PIDINTERVAL_MILLIS || lastPrinted_ == 0.0;
+    unsigned long now = getCurrentMils();
+    Serial.println("---------");
+    Serial.println(now);
+    Serial.println(lastPrinted_);
+    if (now - lastPrinted_ > PIDINTERVAL_MILLIS || lastPrinted_ == 0.0) {
+        lastPrinted_ = now;
+        return true;
+    } 
+    return false;
 }
 
 void ReflowOperationState::setLastTemp(double temp) {
@@ -140,9 +148,11 @@ double ReflowOperationState::getLastTemp() {
 
 void ReflowOperationState::recordJustPrinted() {
     lastTime_ = getCurrentMils();
-    lastPrinted_ = getCurrentMils();
+    //lastPrinted_ = getCurrentMils();
 }
 
 unsigned long ReflowOperationState::getLastTime() {
-    return lastTime_;
+    //return lastTime_;
+    return lastPrinted_;
 }
+
