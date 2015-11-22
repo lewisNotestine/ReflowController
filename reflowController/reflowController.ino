@@ -41,6 +41,7 @@ void setup() {
   	millis(),
   	thermocouple.readCelsius(),
   	digitalRead(ReflowOperationState::PIN_GUN));
+    Serial.println("finished setup");
 }
 
 void loop() {

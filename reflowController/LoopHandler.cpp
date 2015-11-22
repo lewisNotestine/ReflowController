@@ -29,15 +29,22 @@ void LoopHandler::handleLoop() {
 
     if (pid_->Compute()) {
 
-      //TODO: is PIDINTERVAL_MILLIS the right thing to use as a comparison for PID output?
-      if(pidParams_->getPidOutput() > 0) {
+      if (reflowState_->getCurrentTargetTemp() - c > MARGIN_TEMP_DIFF) {
         digitalWrite(ReflowOperationState::PIN_GUN, HIGH);
         reflowState_->setGunState(true);
-      } else {
+      } else if (c - reflowState_->getCurrentTargetTemp() > MARGIN_TEMP_DIFF) {
         digitalWrite(ReflowOperationState::PIN_GUN, LOW);
         reflowState_->setGunState(false);
+      } else {
+        //TODO: is PIDINTERVAL_MILLIS the right thing to use as a comparison for PID output?
+        if(pidParams_->getPidOutput() > 0) {
+          digitalWrite(ReflowOperationState::PIN_GUN, HIGH);
+          reflowState_->setGunState(true);
+        } else {
+          digitalWrite(ReflowOperationState::PIN_GUN, LOW);
+          reflowState_->setGunState(false);
+        }
       }
-      
       calculateDTDt(&dT, &dt, &c, &dTdt);    
       pidParams_->setPidInput(dTdt);
   
