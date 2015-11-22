@@ -29,10 +29,10 @@ void LoopHandler::handleLoop() {
 
     if (pid_->Compute()) {
 
-      if (reflowState_->getCurrentTargetTemp() - c > MARGIN_TEMP_DIFF) {
+      if (reflowState_->getCurrentTargetTemp() - c > MARGIN_TEMP_LOWER) {
         digitalWrite(ReflowOperationState::PIN_GUN, HIGH);
         reflowState_->setGunState(true);
-      } else if (c - reflowState_->getCurrentTargetTemp() > MARGIN_TEMP_DIFF) {
+      } else if (c - reflowState_->getCurrentTargetTemp() > MARGIN_TEMP_UPPER) {
         digitalWrite(ReflowOperationState::PIN_GUN, LOW);
         reflowState_->setGunState(false);
       } else {

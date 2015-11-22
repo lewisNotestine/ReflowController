@@ -7,7 +7,8 @@
 class LoopHandler {
 private:
 
-  static const int MARGIN_TEMP_DIFF = 2;
+  static const int MARGIN_TEMP_LOWER = 2;
+  static const int MARGIN_TEMP_UPPER = 3;
 
 	PID* pid_;
 	PidParams* pidParams_;
