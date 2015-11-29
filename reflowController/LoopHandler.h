@@ -6,11 +6,16 @@
 
 class LoopHandler {
 private:
+
+  static const int MARGIN_TEMP_LOWER = 2;
+  static const int MARGIN_TEMP_UPPER = 3;
+
 	PID* pid_;
 	PidParams* pidParams_;
 	ReflowOperationState* reflowState_;
 	Adafruit_MAX31855* thermocouple_;
 
+  
 	void setTargetTemp();
 	void calculateDTDt(double* dT, double* dt, double* c, double* dTdtOutput);
 public:
@@ -18,4 +23,5 @@ public:
 	void handleLoop();
 
 };
+
 

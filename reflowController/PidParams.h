@@ -1,4 +1,4 @@
-#pragma once;
+#pragma once
 
 class PidParams {
 private:
@@ -16,4 +16,5 @@ public:
 	void setPidInput(double newPidInput);
 	void setPidOutput(double newPidOutput);
 };
+
 
