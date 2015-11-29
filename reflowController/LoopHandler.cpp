@@ -29,12 +29,10 @@ void LoopHandler::handleLoop() {
 
     if (pid_->Compute()) {
 
+      //Gate the temp to have a lower bound (because we're controlling dTdt, not T).
       if (reflowState_->getCurrentTargetTemp() - c > MARGIN_TEMP_LOWER) {
         digitalWrite(ReflowOperationState::PIN_GUN, HIGH);
         reflowState_->setGunState(true);
-      } else if (c - reflowState_->getCurrentTargetTemp() > MARGIN_TEMP_UPPER) {
-        digitalWrite(ReflowOperationState::PIN_GUN, LOW);
-        reflowState_->setGunState(false);
       } else {
         //TODO: is PIDINTERVAL_MILLIS the right thing to use as a comparison for PID output?
         if(pidParams_->getPidOutput() > 0) {

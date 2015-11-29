@@ -34,6 +34,7 @@ LoopHandler loopHandler(&pid, &pidParams, &reflowState, &thermocouple);
 
 void setup() { 
   Serial.begin(4800);
+  pid.SetMode(AUTOMATIC);
     
   setupHandler.runSetup();  
   reflowState = ReflowOperationState(
